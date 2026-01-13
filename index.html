@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>原神キャラクター管理アプリver.LunaⅣ</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+    th { background: #f0f0f0; }
+    .filters { margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+    select { padding: 4px; }
+    .count { margin: 8px 0; font-weight: bold; }
+    /* チェックされた行 */
+tr.checked {
+  background-color: #999;
+}
+
+tr.checked td {
+  text-decoration: line-through;
+  color: #555;
+}
+
+/* 名前セルのレイアウト */
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.name-cell input[type="checkbox"] {
+  transform: scale(1.1);
+}
+
+  </style>
+</head>
+<body>
+
+<h1>原神キャラクター一覧Ver.LunaⅣ</h1>
+
+<div class="filters">
+  <select id="filter-region"><option value="">出身地（すべて）</option></select>
+  <select id="filter-element"><option value="">属性（すべて）</option></select>
+  <select id="filter-weapon"><option value="">武器（すべて）</option></select>
+  <select id="filter-height"><option value="">身長タイプ（すべて）</option></select>
+　<label style="display:flex;align-items:center;gap:4px;">
+    <input type="checkbox" id="hide-traveler" /> 旅人を非表示
+  </label>
+</div>
+
+<div class="count" id="result-count"></div>
+
+<table>
+  <thead>
+    <tr>
+      <th>名前</th>
+      <th>出身地</th>
+      <th>属性</th>
+      <th>武器</th>
+      <th>身長タイプ</th>
+    </tr>
+  </thead>
+  <tbody id="character-table"></tbody>
+</table>
+
+<script>
+const characters = [
+  {name:'旅人(水)', region:'その他', element:'水', weapon:'片手剣', height:'中'},
+  {name:'旅人(炎)', region:'その他', element:'炎', weapon:'片手剣', height:'中'},
+  {name:'旅人(雷)', region:'その他', element:'雷', weapon:'片手剣', height:'中'},
+  {name:'旅人(風)', region:'その他', element:'風', weapon:'片手剣', height:'中'},
+  {name:'旅人(岩)', region:'その他', element:'岩', weapon:'片手剣', height:'中'},
+  {name:'旅人(草)', region:'その他', element:'草', weapon:'片手剣', height:'中'},
+
+  {name:'ウェンティ', region:'モンド', element:'風', weapon:'弓', height:'中'},
+  {name:'アンバー', region:'モンド', element:'炎', weapon:'弓', height:'中'},
+  {name:'ガイア', region:'モンド', element:'氷', weapon:'片手剣', height:'高'},
+  {name:'リサ', region:'モンド', element:'雷', weapon:'法器', height:'高'},
+  {name:'ジン', region:'モンド', element:'風', weapon:'片手剣', height:'高'},
+  {name:'バーバラ', region:'モンド', element:'水', weapon:'法器', height:'中'},
+  {name:'ディルック', region:'モンド', element:'炎', weapon:'両手剣', height:'高'},
+  {name:'レザー', region:'モンド', element:'雷', weapon:'両手剣', height:'中'},
+  {name:'ベネット', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
+  {name:'ノエル', region:'モンド', element:'岩', weapon:'両手剣', height:'中'},
+  {name:'フィッシュル', region:'モンド', element:'雷', weapon:'弓', height:'中'},
+  {name:'スクロース', region:'モンド', element:'風', weapon:'法器', height:'中'},
+  {name:'モナ', region:'モンド', element:'水', weapon:'法器', height:'中'},
+  {name:'クレー', region:'モンド', element:'炎', weapon:'法器', height:'低'},
+  {name:'ディオナ', region:'モンド', element:'氷', weapon:'弓', height:'低'},
+  {name:'アルベド', region:'モンド', element:'岩', weapon:'片手剣', height:'中'},
+  {name:'エウルア', region:'モンド', element:'氷', weapon:'両手剣', height:'高'},
+  {name:'ミカ', region:'モンド', element:'氷', weapon:'長柄武器', height:'中'},
+  {name:'香菱', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
+  {name:'行秋', region:'璃月', element:'水', weapon:'片手剣', height:'中'},
+  {name:'重雲', region:'璃月', element:'氷', weapon:'両手剣', height:'中'},
+  {name:'刻晴', region:'璃月', element:'雷', weapon:'片手剣', height:'中'},
+  {name:'凝光', region:'璃月', element:'岩', weapon:'法器', height:'高'},
+  {name:'北斗', region:'璃月', element:'雷', weapon:'両手剣', height:'高'},
+  {name:'七七', region:'璃月', element:'氷', weapon:'片手剣', height:'低'},
+  {name:'鍾離', region:'璃月', element:'岩', weapon:'長柄武器', height:'高'},
+  {name:'甘雨', region:'璃月', element:'氷', weapon:'弓', height:'中'},
+  {name:'胡桃', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
+  {name:'申鶴', region:'璃月', element:'氷', weapon:'長柄武器', height:'高'},
+  {name:'夜蘭', region:'璃月', element:'水', weapon:'弓', height:'高'},
+  {name:'白朮', region:'璃月', element:'草', weapon:'法器', height:'高'},
+  {name:'神里綾華', region:'稲妻', element:'氷', weapon:'片手剣', height:'中'},
+  {name:'神里綾人', region:'稲妻', element:'水', weapon:'片手剣', height:'高'},
+  {name:'雷電将軍', region:'稲妻', element:'雷', weapon:'長柄武器', height:'高'},
+  {name:'八重神子', region:'稲妻', element:'雷', weapon:'法器', height:'高'},
+  {name:'宵宮', region:'稲妻', element:'炎', weapon:'弓', height:'中'},
+  {name:'早柚', region:'稲妻', element:'風', weapon:'両手剣', height:'低'},
+  {name:'久岐忍', region:'稲妻', element:'雷', weapon:'片手剣', height:'中'},
+  {name:'鹿野院平蔵', region:'稲妻', element:'風', weapon:'法器', height:'中'},
+  {name:'荒瀧一斗', region:'稲妻', element:'岩', weapon:'両手剣', height:'高'},
+  {name:'珊瑚宮心海', region:'稲妻', element:'水', weapon:'法器', height:'中'},
+
+  {name:'ティナリ', region:'スメール', element:'草', weapon:'弓', height:'中'},
+  {name:'ナヒーダ', region:'スメール', element:'草', weapon:'法器', height:'低'},
+  {name:'アルハイゼン', region:'スメール', element:'草', weapon:'片手剣', height:'高'},
+  {name:'ニィロウ', region:'スメール', element:'水', weapon:'片手剣', height:'中'},
+  {name:'ディシア', region:'スメール', element:'炎', weapon:'両手剣', height:'高'},
+
+  {name:'リネ', region:'フォンテーヌ', element:'炎', weapon:'弓', height:'中'},
+  {name:'リネット', region:'フォンテーヌ', element:'風', weapon:'片手剣', height:'中'},
+  {name:'フリーナ', region:'フォンテーヌ', element:'水', weapon:'片手剣', height:'中'},
+
+  {name:'ムアラニ', region:'ナタ', element:'水', weapon:'法器', height:'中'},
+  {name:'魈', region:'璃月', element:'風', weapon:'長柄武器', height:'中'},
+  {name:'タルタリヤ', region:'スネージナヤ', element:'水', weapon:'弓', height:'高'},
+  {name:'辛炎', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
+  {name:'ロサリア', region:'モンド', element:'氷', weapon:'長柄武器', height:'高'},
+  {name:'煙緋', region:'璃月', element:'炎', weapon:'法器', height:'中'},
+  {name:'楓原万葉', region:'稲妻', element:'風', weapon:'片手剣', height:'中'},
+  {name:'トーマ', region:'稲妻', element:'炎', weapon:'長柄武器', height:'高'},
+  {name:'ゴロー', region:'稲妻', element:'岩', weapon:'弓', height:'中'},
+  {name:'九条裟羅', region:'稲妻', element:'雷', weapon:'弓', height:'高'},
+  {name:'アーロイ', region:'その他', element:'氷', weapon:'弓', height:'中'},
+  {name:'雲菫', region:'璃月', element:'岩', weapon:'長柄武器', height:'中'},
+  {name:'ドリー', region:'スメール', element:'雷', weapon:'両手剣', height:'低'},
+  {name:'コレイ', region:'スメール', element:'草', weapon:'弓', height:'中'},
+  {name:'セノ', region:'スメール', element:'雷', weapon:'長柄武器', height:'中'},
+  {name:'キャンディス', region:'スメール', element:'水', weapon:'長柄武器', height:'高'},
+  {name:'レイラ', region:'スメール', element:'氷', weapon:'片手剣', height:'中'},
+  {name:'放浪者', region:'スメール', element:'風', weapon:'法器', height:'中'},
+  {name:'ファルザン', region:'スメール', element:'風', weapon:'弓', height:'中'},
+  {name:'カーヴェ', region:'スメール', element:'草', weapon:'両手剣', height:'高'},
+  {name:'ヨォーヨ', region:'璃月', element:'草', weapon:'長柄武器', height:'低'},
+  {name:'綺良々', region:'稲妻', element:'草', weapon:'片手剣', height:'中'},
+  {name:'シャルロット', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'中'},
+  {name:'ナヴィア', region:'フォンテーヌ', element:'岩', weapon:'両手剣', height:'高'},
+  {name:'クロリンデ', region:'フォンテーヌ', element:'雷', weapon:'片手剣', height:'高'},
+  {name:'シグウィン', region:'フォンテーヌ', element:'水', weapon:'弓', height:'低'},
+  {name:'リオセスリ', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'高'},
+  {name:'ヌヴィレット', region:'フォンテーヌ', element:'水', weapon:'法器', height:'高'},
+  {name:'アルレッキーノ', region:'スネージナヤ', element:'炎', weapon:'長柄武器', height:'高'},
+  {name:'スカーク', region:'その他', element:'氷', weapon:'片手剣', height:'中'},
+  {name:'シュヴルーズ', region:'フォンテーヌ', element:'炎', weapon:'長柄武器', height:'中'},
+  {name:'千織', region:'稲妻', element:'岩', weapon:'片手剣', height:'中'},
+  {name:'閑雲', region:'璃月', element:'風', weapon:'法器', height:'高'},
+  {name:'嘉明', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
+  {name:'セトス', region:'スメール', element:'雷', weapon:'弓', height:'中'},
+  {name:'エミリエ', region:'フォンテーヌ', element:'草', weapon:'長柄武器', height:'中'},
+  {name:'フレミネ', region:'フォンテーヌ', element:'氷', weapon:'両手剣', height:'中'},
+  {name:'カチーナ', region:'ナタ', element:'岩', weapon:'長柄武器', height:'低'},
+  {name:'キィニチ', region:'ナタ', element:'草', weapon:'両手剣', height:'中'},
+  {name:'シトラリ', region:'ナタ', element:'氷', weapon:'法器', height:'中'},
+  {name:'シロネン', region:'ナタ', element:'岩', weapon:'片手剣', height:'高'},
+  {name:'イアンサ', region:'ナタ', element:'雷', weapon:'長柄武器', height:'低'},
+  {name:'チャスカ', region:'ナタ', element:'風', weapon:'弓', height:'高'},
+  {name:'マーヴィカ', region:'ナタ', element:'炎', weapon:'両手剣', height:'高'},
+  {name:'オロルン', region:'ナタ', element:'雷', weapon:'弓', height:'高'},
+  {name:'イファ', region:'ナタ', element:'風', weapon:'法器', height:'高'},
+
+  {name:'藍硯', region:'璃月', element:'風', weapon:'法器', height:'中'},
+  {name:'夢見月瑞希', region:'稲妻', element:'風', weapon:'法器', height:'中'},
+  {name:'ヴァレサ', region:'ナタ', element:'雷', weapon:'法器', height:'中'},
+  {name:'エスコフィエ', region:'フォンテーヌ', element:'氷', weapon:'長柄武器', height:'高'},
+  {name:'ダリア', region:'モンド', element:'水', weapon:'片手剣', height:'中'},
+  {name:'イネファ', region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'中'},
+  {name:'ラウマ', region:'ナドクライ', element:'草', weapon:'法器', height:'高'},
+  {name:'アイノ', region:'ナドクライ', element:'水', weapon:'両手剣', height:'低'},
+  {name:'ヤフォダ', region:'ナドクライ', element:'風', weapon:'弓', height:'中'},
+
+  {name:'ドゥリン', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
+  {name:'ネフェル', region:'スメール', element:'草', weapon:'法器', height:'高'},
+  {name:'フリンズ', region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'高'},
+  {name:'コロンビーナ', region:'ナドクライ', element:'水', weapon:'法器', height:'中'},
+  {name:'茲白', region:'璃月', element:'岩', weapon:'片手剣', height:'高'},
+  {name:'イルーガ', region:'ナドクライ', element:'岩', weapon:'長柄武器', height:'中'}
+];
+
+/* ===============================
+   属性ごとのアイコン定義
+   実際の運用では画像パスを差し替えてください
+   =============================== */
+const elementIcons = {
+  '炎': 'https://static.wikia.nocookie.net/gensin-impact/images/2/2c/Element_Pyro.svg/revision/latest/scale-to-width-down/22?cb=20240401115510',
+  '水': 'https://static.wikia.nocookie.net/gensin-impact/images/8/80/Element_Hydro.svg/revision/latest/scale-to-width-down/22?cb=20240401115449',
+  '雷': 'https://static.wikia.nocookie.net/gensin-impact/images/f/ff/Element_Electro.svg/revision/latest/scale-to-width-down/22?cb=20240401115329',
+  '氷': 'https://static.wikia.nocookie.net/gensin-impact/images/7/72/Element_Cryo.svg/revision/latest/scale-to-width-down/22?cb=20240401115157',
+  '風': 'https://static.wikia.nocookie.net/gensin-impact/images/1/10/Element_Anemo.svg/revision/latest/scale-to-width-down/22?cb=20240401115016',
+  '岩': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9b/Element_Geo.svg/revision/latest/scale-to-width-down/22?cb=20240401115352',
+  '草': 'https://static.wikia.nocookie.net/gensin-impact/images/7/73/Element_Dendro.svg/revision/latest/scale-to-width-down/22?cb=20240401115226',
+  '不明': 'icons/unknown.png'
+};
+
+/* ===============================
+   キャラクター画像定義
+   名前をキーにして画像パスを管理
+   =============================== */
+const characterImages = {
+  '旅人(水)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  '旅人(炎)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  '旅人(雷)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  '旅人(風)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  '旅人(岩)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  '旅人(草)': 'https://static.wikia.nocookie.net/gensin-impact/images/5/59/Traveler_Icon.png/revision/latest/scale-to-width-down/50?cb=20211220013610',
+  'ウェンティ': 'https://static.wikia.nocookie.net/gensin-impact/images/f/f1/Venti_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011949',
+  '魈': 'https://static.wikia.nocookie.net/gensin-impact/images/f/fd/Xiao_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214012045',
+  'タルタリヤ': 'https://static.wikia.nocookie.net/gensin-impact/images/8/85/Tartaglia_Icon.png/revision/latest/scale-to-width-down/50?cb=20210213163935',
+  'ヤフォダ': 'https://static.wikia.nocookie.net/gensin-impact/images/b/bf/Jahoda_Icon.png/revision/latest/scale-to-width-down/50?cb=20250911004842',
+  'スクロース': 'https://static.wikia.nocookie.net/gensin-impact/images/0/0e/Sucrose_Icon.png/revision/latest/scale-to-width-down/50?cb=20210213163209',
+　'ファルザン': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b2/Faruzan_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092917',
+　'夢見月瑞希': 'https://static.wikia.nocookie.net/gensin-impact/images/f/f6/Yumemizuki_Mizuki_Icon.png/revision/latest/scale-to-width-down/50?cb=20250212014631',
+　'藍硯': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e6/Lan_Yan_Icon.png/revision/latest/scale-to-width-down/50?cb=20250128195304',
+　'リネット': 'https://static.wikia.nocookie.net/gensin-impact/images/a/ad/Lynette_Icon.png/revision/latest/scale-to-width-down/50?cb=20230816051019',
+　'楓原万葉': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e3/Kaedehara_Kazuha_Icon.png/revision/latest/scale-to-width-down/50?cb=20210623063513',
+　'鹿野院平蔵': 'https://static.wikia.nocookie.net/gensin-impact/images/2/20/Shikanoin_Heizou_Icon.png/revision/latest/scale-to-width-down/50?cb=20240711205453',
+　'放浪者': 'https://static.wikia.nocookie.net/gensin-impact/images/f/f8/Wanderer_Icon.png/revision/latest/scale-to-width-down/50?cb=20221207034209',
+　'閑雲': 'https://static.wikia.nocookie.net/gensin-impact/images/d/d3/Xianyun_Icon.png/revision/latest/scale-to-width-down/50?cb=20240131020302',
+　'ジン': 'https://static.wikia.nocookie.net/gensin-impact/images/6/64/Jean_Icon.png/revision/latest/scale-to-width-down/50?cb=20220602180528',
+　'チャスカ': 'https://static.wikia.nocookie.net/gensin-impact/images/0/03/Chasca_Icon.png/revision/latest/scale-to-width-down/50?cb=20241120025626',
+　'イファ': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5f/Ifa_Icon.png/revision/latest/scale-to-width-down/50?cb=20250507052606',
+　'早柚': 'https://static.wikia.nocookie.net/gensin-impact/images/2/22/Sayu_Icon.png/revision/latest/scale-to-width-down/50?cb=20210810101044',
+　'アーロイ': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e5/Aloy_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091525',
+　'神里綾華': 'https://static.wikia.nocookie.net/gensin-impact/images/5/51/Kamisato_Ayaka_Icon.png/revision/latest/scale-to-width-down/50?cb=20211221231648',
+　'甘雨': 'https://static.wikia.nocookie.net/gensin-impact/images/7/79/Ganyu_Icon.png/revision/latest/scale-to-width-down/50?cb=20230519012425',
+　'シトラリ': 'https://static.wikia.nocookie.net/gensin-impact/images/d/dd/Citlali_Icon.png/revision/latest/scale-to-width-down/50?cb=20241130080542',
+　'シャルロット': 'https://static.wikia.nocookie.net/gensin-impact/images/d/d2/Charlotte_Icon.png/revision/latest/scale-to-width-down/50?cb=20231108030544',
+　'スカーク': 'https://static.wikia.nocookie.net/gensin-impact/images/0/03/Skirk_Icon.png/revision/latest/scale-to-width-down/50?cb=20250618025127',
+　'レイラ': 'https://static.wikia.nocookie.net/gensin-impact/images/1/1a/Layla_Icon.png/revision/latest/scale-to-width-down/50?cb=20221118140544',
+　'重雲': 'https://static.wikia.nocookie.net/gensin-impact/images/3/35/Chongyun_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092204',
+　'フレミネ': 'https://static.wikia.nocookie.net/gensin-impact/images/e/ee/Freminet_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215093001',
+　'ミカ': 'https://static.wikia.nocookie.net/gensin-impact/images/d/dd/Mika_Icon.png/revision/latest/scale-to-width-down/50?cb=20230321101835',
+　'エウルア': 'https://static.wikia.nocookie.net/gensin-impact/images/a/af/Eula_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092858',
+　'エスコフィエ': 'https://static.wikia.nocookie.net/gensin-impact/images/2/2a/Escoffier_Icon.png/revision/latest/scale-to-width-down/50?cb=20250507052556',
+　'申鶴': 'https://static.wikia.nocookie.net/gensin-impact/images/a/af/Shenhe_Icon.png/revision/latest/scale-to-width-down/50?cb=20220210034241',
+　'ロサリア': 'https://static.wikia.nocookie.net/gensin-impact/images/3/35/Rosaria_Icon.png/revision/latest/scale-to-width-down/50?cb=20220601032845',
+　'ガイア': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b6/Kaeya_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011902',
+　'リオセスリ': 'https://static.wikia.nocookie.net/gensin-impact/images/b/bb/Wriothesley_Icon.png/revision/latest/scale-to-width-down/50?cb=20231017103145',
+　'ディオナ': 'https://static.wikia.nocookie.net/gensin-impact/images/4/40/Diona_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092355',
+　'七七': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b3/Qiqi_Icon.png/revision/latest/scale-to-width-down/50?cb=20220316020612',
+　'ネフェル': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5b/Nefer_Icon.png/revision/latest/scale-to-width-down/50?cb=20250911005040',
+　'エミリエ': 'https://static.wikia.nocookie.net/gensin-impact/images/a/aa/Emilie_Icon.png/revision/latest/scale-to-width-down/50?cb=20240806102359',
+　'綺良々': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b6/Kirara_Icon.png/revision/latest/scale-to-width-down/50?cb=20230718042457',
+　'コレイ': 'https://static.wikia.nocookie.net/gensin-impact/images/a/a2/Collei_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092218',
+　'キィニチ': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9a/Kinich_Icon.png/revision/latest/scale-to-width-down/50?cb=20240917123836',
+　'ティナリ': 'https://static.wikia.nocookie.net/gensin-impact/images/8/87/Tighnari_Icon.png/revision/latest/scale-to-width-down/50?cb=20220824024817',
+　'ラウマ': 'https://static.wikia.nocookie.net/gensin-impact/images/2/27/Lauma_Icon.png/revision/latest/scale-to-width-down/50?cb=20250910024154',
+　'アルハイゼン': 'https://static.wikia.nocookie.net/gensin-impact/images/2/2c/Alhaitham_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091456',
+　'カーヴェ': 'https://static.wikia.nocookie.net/gensin-impact/images/1/1f/Kaveh_Icon.png/revision/latest/scale-to-width-down/50?cb=20230502113258',
+　'白朮': 'https://static.wikia.nocookie.net/gensin-impact/images/c/cb/Baizhu_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091730',
+　'ナヒーダ': 'https://static.wikia.nocookie.net/gensin-impact/images/f/f9/Nahida_Icon.png/revision/latest/scale-to-width-down/50?cb=20221102030809',
+　'ヨォーヨ': 'https://static.wikia.nocookie.net/gensin-impact/images/8/83/Yaoyao_Icon.png/revision/latest/scale-to-width-down/50?cb=20230123150446',
+　'イネファ': 'https://static.wikia.nocookie.net/gensin-impact/images/0/0b/Ineffa_Icon.png/revision/latest/scale-to-width-down/50?cb=20250730030204',
+　'ヴァレサ': 'https://static.wikia.nocookie.net/gensin-impact/images/d/dd/Varesa_Icon.png/revision/latest/scale-to-width-down/50?cb=20250326014831',
+　'久岐忍': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b3/Kuki_Shinobu_Icon.png/revision/latest/scale-to-width-down/50?cb=20220605061801',
+　'刻晴': 'https://static.wikia.nocookie.net/gensin-impact/images/5/52/Keqing_Icon.png/revision/latest/scale-to-width-down/50?cb=20210213162751',
+　'フィッシュル': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9a/Fischl_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092945',
+　'セトス': 'https://static.wikia.nocookie.net/gensin-impact/images/9/90/Sethos_Icon.png/revision/latest/scale-to-width-down/50?cb=20240605020859',
+　'セノ': 'https://static.wikia.nocookie.net/gensin-impact/images/3/31/Cyno_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092240',
+　'レザー': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b8/Razor_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011936',
+　'九条裟羅': 'https://static.wikia.nocookie.net/gensin-impact/images/d/df/Kujou_Sara_Icon.png/revision/latest/scale-to-width-down/50?cb=20220210040844',
+　'クロリンデ': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5b/Clorinde_Icon.png/revision/latest/scale-to-width-down/50?cb=20240605020849',
+　'北斗': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e1/Beidou_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091828',
+　'八重神子': 'https://static.wikia.nocookie.net/gensin-impact/images/b/ba/Yae_Miko_Icon.png/revision/latest/scale-to-width-down/50?cb=20220216025931',
+　'雷電将軍': 'https://static.wikia.nocookie.net/gensin-impact/images/2/24/Raiden_Shogun_Icon.png/revision/latest/scale-to-width-down/50?cb=20240717072843',
+　'リサ': 'https://static.wikia.nocookie.net/gensin-impact/images/6/65/Lisa_Icon.png/revision/latest/scale-to-width-down/50?cb=20240711205456',
+　'オロルン': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5e/Ororon_Icon.png/revision/latest/scale-to-width-down/50?cb=20241014100711',
+　'フリンズ': 'https://static.wikia.nocookie.net/gensin-impact/images/a/af/Flins_Icon.png/revision/latest/scale-to-width-down/50?cb=20250910175819',
+　'イアンサ': 'https://static.wikia.nocookie.net/gensin-impact/images/3/38/Iansan_Icon.png/revision/latest/scale-to-width-down/50?cb=20250326014900',
+　'ドリー': 'https://static.wikia.nocookie.net/gensin-impact/images/3/38/Iansan_Icon.png/revision/latest/scale-to-width-down/50?cb=20250326014900',
+　'雲菫': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9c/Yun_Jin_Icon.png/revision/latest/scale-to-width-down/50?cb=20220316025919',
+　'バーバラ': 'https://static.wikia.nocookie.net/gensin-impact/images/6/6a/Barbara_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091800',
+　'モナ': 'https://static.wikia.nocookie.net/gensin-impact/images/4/41/Mona_Icon.png/revision/latest/scale-to-width-down/50?cb=20220601033558',
+　'神里綾人': 'https://static.wikia.nocookie.net/gensin-impact/images/2/27/Kamisato_Ayato_Icon.png/revision/latest/scale-to-width-down/50?cb=20220601033710',
+　'ムアラニ': 'https://static.wikia.nocookie.net/gensin-impact/images/0/0b/Mualani_Icon.png/revision/latest/scale-to-width-down/50?cb=20240828030235',
+　'ダリア': 'https://static.wikia.nocookie.net/gensin-impact/images/6/6d/Dahlia_Icon.png/revision/latest/scale-to-width-down/50?cb=20250618025425',
+　'アイノ': 'https://static.wikia.nocookie.net/gensin-impact/images/a/a3/Aino_Icon.png/revision/latest/scale-to-width-down/50?cb=20250910025341',
+　'コロンビーナ': '',
+　'アンバー': 'https://static.wikia.nocookie.net/gensin-impact/images/7/75/Amber_Icon.png/revision/latest/scale-to-width-down/50?cb=20210213161233',
+　'ベネット': 'https://static.wikia.nocookie.net/gensin-impact/images/7/79/Bennett_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091856',
+　'クレー': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9c/Klee_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011911',
+　'香菱': 'https://static.wikia.nocookie.net/gensin-impact/images/3/39/Xiangling_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011301',
+　'ディシア': 'https://static.wikia.nocookie.net/gensin-impact/images/3/3f/Dehya_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092328',
+　'リネ': 'https://static.wikia.nocookie.net/gensin-impact/images/b/b2/Lyney_Icon.png/revision/latest/scale-to-width-down/50?cb=20230816045203',
+　'マーヴィカ': 'https://static.wikia.nocookie.net/gensin-impact/images/d/da/Mavuika_Icon.png/revision/latest/scale-to-width-down/50?cb=20250101070636',
+  '行秋': 'https://static.wikia.nocookie.net/gensin-impact/images/d/d4/Xingqiu_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214012057',
+  '夜蘭': 'https://static.wikia.nocookie.net/gensin-impact/images/d/d3/Yelan_Icon.png/revision/latest/scale-to-width-down/50?cb=20240711205454',
+  'ニィロウ': 'https://static.wikia.nocookie.net/gensin-impact/images/5/58/Nilou_Icon.png/revision/latest/scale-to-width-down/50?cb=20221014102540',
+  'キャンディス': 'https://static.wikia.nocookie.net/gensin-impact/images/d/dd/Candace_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092140',
+  '珊瑚宮心海': 'https://static.wikia.nocookie.net/gensin-impact/images/f/ff/Sangonomiya_Kokomi_Icon.png/revision/latest/scale-to-width-down/50?cb=20210921103819',
+  'フリーナ': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e6/Furina_Icon.png/revision/latest/scale-to-width-down/50?cb=20231108030656',
+  'ヌヴィレット': 'https://static.wikia.nocookie.net/gensin-impact/images/2/21/Neuvillette_Icon.png/revision/latest/scale-to-width-down/50?cb=20240711205454',
+  'シグウィン': 'https://static.wikia.nocookie.net/gensin-impact/images/3/37/Sigewinne_Icon.png/revision/latest/scale-to-width-down/50?cb=20240625101835',
+　'ディルック': 'https://static.wikia.nocookie.net/gensin-impact/images/3/3d/Diluc_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092341',
+  '胡桃': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e9/Hu_Tao_Icon.png/revision/latest/scale-to-width-down/50?cb=20210228210611',
+  '宵宮': 'https://static.wikia.nocookie.net/gensin-impact/images/8/88/Yoimiya_Icon.png/revision/latest/scale-to-width-down/50?cb=20220214235604',
+  '辛炎': 'https://static.wikia.nocookie.net/gensin-impact/images/2/24/Xinyan_Icon.png/revision/latest/scale-to-width-down/50?cb=20210213163013',
+  '煙緋': 'https://static.wikia.nocookie.net/gensin-impact/images/5/54/Yanfei_Icon.png/revision/latest/scale-to-width-down/50?cb=20210422063525',
+  'トーマ': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5b/Thoma_Icon.png/revision/latest/scale-to-width-down/50?cb=20211014011046',
+  'アルレッキーノ': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9a/Arlecchino_Icon.png/revision/latest/scale-to-width-down/50?cb=20240424041749',
+  'シュヴルーズ': 'https://static.wikia.nocookie.net/gensin-impact/images/8/8a/Chevreuse_Icon.png/revision/latest/scale-to-width-down/50?cb=20231225195348',
+  '嘉明': 'https://static.wikia.nocookie.net/gensin-impact/images/7/77/Gaming_Icon.png/revision/latest/scale-to-width-down/50?cb=20240131020313',
+  'ドゥリン': 'https://static.wikia.nocookie.net/gensin-impact/images/b/ba/Durin_Icon.png/revision/latest/scale-to-width-down/50?cb=20251203043105',
+  'ノエル': 'https://static.wikia.nocookie.net/gensin-impact/images/8/8e/Noelle_Icon.png/revision/latest/scale-to-width-down/50?cb=20210214011929',
+  '凝光': 'https://static.wikia.nocookie.net/gensin-impact/images/e/e0/Ningguang_Icon.png/revision/latest/scale-to-width-down/50?cb=20220210040239',
+  '荒瀧一斗': 'https://static.wikia.nocookie.net/gensin-impact/images/7/7b/Arataki_Itto_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091612',
+  'カチーナ': 'https://static.wikia.nocookie.net/gensin-impact/images/1/1a/Kachina_Icon.png/revision/latest/scale-to-width-down/50?cb=20240828030247',
+  'シロネン': 'https://static.wikia.nocookie.net/gensin-impact/images/a/ab/Xilonen_Icon.png/revision/latest/scale-to-width-down/50?cb=20241009015637',
+  '茲白': '',
+  'イルーガ': '',
+  '鍾離': 'https://static.wikia.nocookie.net/gensin-impact/images/a/a6/Zhongli_Icon.png/revision/latest/scale-to-width-down/50?cb=20240711205450',
+  'アルベド': 'https://static.wikia.nocookie.net/gensin-impact/images/3/30/Albedo_Icon.png/revision/latest/scale-to-width-down/50?cb=20231214222053',
+  'ナヴィア': 'https://static.wikia.nocookie.net/gensin-impact/images/c/c0/Navia_Icon.png/revision/latest/scale-to-width-down/50?cb=20231220022117',
+  '千織': 'https://static.wikia.nocookie.net/gensin-impact/images/8/88/Chiori_Icon.png/revision/latest/scale-to-width-down/50?cb=20240313015540',
+  'ゴロー': 'https://static.wikia.nocookie.net/gensin-impact/images/f/fe/Gorou_Icon.png/revision/latest/scale-to-width-down/50?cb=20211126224331',
+　
+	// 必要に応じて他キャラも追加
+};
+
+const table = document.getElementById('character-table');
+const countEl = document.getElementById('result-count');
+const filters = {
+  region: document.getElementById('filter-region'),
+  element: document.getElementById('filter-element'),
+  weapon: document.getElementById('filter-weapon'),
+  height: document.getElementById('filter-height'),
+};
+
+// 旅人非表示チェックボックス
+const hideTravelerCheckbox = document.getElementById('hide-traveler');
+
+function uniqueValues(key) {
+  return [...new Set(characters.map(c => c[key]))];
+}
+
+function setupFilters() {
+  Object.entries(filters).forEach(([key, select]) => {
+    uniqueValues(key).forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      select.appendChild(o);
+    });
+    select.addEventListener('change', render);
+  });
+}
+
+function render() {
+  table.innerHTML = '';
+
+　const hideTraveler = hideTravelerCheckbox.checked;
+
+  const filtered = characters.filter(c => {
+
+　　// 「旅人」を名前に含むキャラを非表示にする
+    if (hideTraveler && c.name.startsWith('旅人')) return false;
+    
+　　return (!filters.region.value || c.region === filters.region.value)
+      && (!filters.element.value || c.element === filters.element.value)
+      && (!filters.weapon.value || c.weapon === filters.weapon.value)
+      && (!filters.height.value || c.height === filters.height.value);
+  });
+　　
+
+  filtered.forEach(c => {
+    const tr = document.createElement('tr');
+    // 属性セルは「アイコン + 文字」で構成
+    const elementHtml = `
+      <div class="element-cell">
+        <img src="${elementIcons[c.element] || elementIcons['不明']}" alt="${c.element}">
+        <span>${c.element}</span>
+      </div>
+    `;
+
+    // 名前セルは「キャラ画像 + 名前」で構成
+   const nameHtml = `
+  <div class="name-cell">
+    <input type="checkbox" class="row-check">
+    <img src="${characterImages[c.name] || 'characters/placeholder.png'}" alt="${c.name}">
+    <span>${c.name}</span>
+  </div>
+`;
+
+
+    tr.innerHTML = `
+      <td>${nameHtml}</td>
+      <td>${c.region}</td>
+      <td>${elementHtml}</td>
+      <td>${c.weapon}</td>
+      <td>${c.height}</td>
+    `;
+    // チェックボックス制御
+const checkbox = tr.querySelector('.row-check');
+checkbox.addEventListener('change', () => {
+  tr.classList.toggle('checked', checkbox.checked);
+});
+
+
+    table.appendChild(tr);
+  });
+  countEl.textContent = `表示中：${filtered.length} / 全${characters.length} キャラクター`;
+}
+
+setupFilters();
+
+// チェック切り替え時にも再描画
+hideTravelerCheckbox.addEventListener('change', render);
+
+render();
+</script>
+
+</body>
+</html>
