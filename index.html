@@ -46,6 +46,7 @@ tr.checked td {
 　<label style="display:flex;align-items:center;gap:4px;">
     <input type="checkbox" id="hide-traveler" /> 旅人を非表示
   </label>
+  <button id="clear-checks">全チェック解除</button>
 </div>
 
 <div class="count" id="result-count"></div>
@@ -341,6 +342,17 @@ const filters = {
 // 旅人非表示チェックボックス
 const hideTravelerCheckbox = document.getElementById('hide-traveler');
 
+const STORAGE_KEY = 'genshinCheckedCharacters';
+
+function loadChecked() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+}
+
+function saveChecked(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+
 function uniqueValues(key) {
   return [...new Set(characters.map(c => c[key]))];
 }
@@ -359,23 +371,21 @@ function setupFilters() {
 function render() {
   table.innerHTML = '';
 
-　const hideTraveler = hideTravelerCheckbox.checked;
+  const hideTraveler = hideTravelerCheckbox.checked;
+  const checkedList = loadChecked(); // ← 追加
 
   const filtered = characters.filter(c => {
-
-　　// 「旅人」を名前に含むキャラを非表示にする
     if (hideTraveler && c.name.startsWith('旅人')) return false;
-    
-　　return (!filters.region.value || c.region === filters.region.value)
+
+    return (!filters.region.value || c.region === filters.region.value)
       && (!filters.element.value || c.element === filters.element.value)
       && (!filters.weapon.value || c.weapon === filters.weapon.value)
       && (!filters.height.value || c.height === filters.height.value);
   });
-　　
 
   filtered.forEach(c => {
     const tr = document.createElement('tr');
-    // 属性セルは「アイコン + 文字」で構成
+
     const elementHtml = `
       <div class="element-cell">
         <img src="${elementIcons[c.element] || elementIcons['不明']}" alt="${c.element}">
@@ -383,15 +393,13 @@ function render() {
       </div>
     `;
 
-    // 名前セルは「キャラ画像 + 名前」で構成
-   const nameHtml = `
-  <div class="name-cell">
-    <input type="checkbox" class="row-check">
-    <img src="${characterImages[c.name] || 'characters/placeholder.png'}" alt="${c.name}">
-    <span>${c.name}</span>
-  </div>
-`;
-
+    const nameHtml = `
+      <div class="name-cell">
+        <input type="checkbox" class="row-check">
+        <img src="${characterImages[c.name] || 'characters/placeholder.png'}" alt="${c.name}">
+        <span>${c.name}</span>
+      </div>
+    `;
 
     tr.innerHTML = `
       <td>${nameHtml}</td>
@@ -400,17 +408,41 @@ function render() {
       <td>${c.weapon}</td>
       <td>${c.height}</td>
     `;
-    // チェックボックス制御
-const checkbox = tr.querySelector('.row-check');
-checkbox.addEventListener('change', () => {
-  tr.classList.toggle('checked', checkbox.checked);
-});
 
+    const checkbox = tr.querySelector('.row-check');
+
+    // ===== 復元処理 =====
+    if (checkedList.includes(c.name)) {
+      checkbox.checked = true;
+      tr.classList.add('checked');
+    }
+
+    // ===== 保存処理 =====
+    checkbox.addEventListener('change', () => {
+      let list = loadChecked();
+
+      if (checkbox.checked) {
+        if (!list.includes(c.name)) list.push(c.name);
+        tr.classList.add('checked');
+      } else {
+        list = list.filter(n => n !== c.name);
+        tr.classList.remove('checked');
+      }
+
+      saveChecked(list);
+    });
 
     table.appendChild(tr);
   });
+
   countEl.textContent = `表示中：${filtered.length} / 全${characters.length} キャラクター`;
 }
+
+document.getElementById('clear-checks').addEventListener('click', () => {
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+});
+
 
 setupFilters();
 
