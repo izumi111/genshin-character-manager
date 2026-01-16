@@ -3,22 +3,222 @@
 <head>
   <meta charset="UTF-8" />
   <title>原神キャラクター管理アプリver.LunaⅣ</title>
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>原神キャラクター管理アプリ ver.LunaⅣ Premium</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    th { background: #f0f0f0; }
-    .filters { margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
-    select { padding: 4px; }
-    .count { margin: 8px 0; font-weight: bold; }
+
+    :root {
+      /* 立体感のあるカラーパレット */
+      --genshin-bg: radial-gradient(circle at center, #2c313f 0%, #1a1e26 100%);
+      --genshin-gold: #f0e6d2;
+      --genshin-accent: #dbb361;
+      --genshin-dark-blue: #1e232d;
+      
+      --rarity-5-bg: linear-gradient(180deg, #de9d46 0%, #b2732c 100%);
+      --rarity-5-border: #ffcc33;
+      --rarity-4-bg: linear-gradient(180deg, #9177b0 0%, #51597a 100%);
+      --rarity-4-border: #a189c4;
+      
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+    }
+
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--genshin-bg);
+      color: var(--genshin-gold);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* 背景の装飾的立体感（光の粒と奥行き） */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -50%; left: -50%; width: 200%; height: 200%;
+      background: radial-gradient(circle, rgba(219, 179, 97, 0.05) 0%, transparent 70%);
+      z-index: -1;
+    }
+
+    .wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      margin: 0;
+      color: var(--genshin-gold);
+      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+
+    /* フィルタエリア：浮かび上がるガラスデザイン */
+    .filters {
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      padding: 25px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    select, button {
+      background: var(--genshin-dark-blue);
+      color: var(--genshin-gold);
+      border: 1px solid var(--genshin-accent);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    select:hover, button:hover {
+      box-shadow: 0 0 10px var(--genshin-accent);
+      transform: translateY(-2px);
+    }
+
+    .checkbox-label {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .count {
+      text-align: right;
+      font-size: 1rem;
+      color: var(--genshin-accent);
+      margin-bottom: 15px;
+      font-weight: 800;
+    }
+
+    /* キャラクターグリッド */
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 20px;
+    }
+
+    /* カードデザイン：さらに立体的に */
+    .char-card {
+      border-radius: 12px;
+      background: #e9e5dc;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+      border-bottom: 6px solid #d1c8b8; /* 下部に厚み */
+    }
+
+    .char-card.stars-5 { border-bottom-color: var(--rarity-5-border); }
+    .char-card.stars-4 { border-bottom-color: var(--rarity-4-border); }
+
+    .char-card:hover {
+      transform: translateY(-8px) scale(1.05);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+      z-index: 5;
+    }
+
+    .char-img-wrap {
+      width: 100%;
+      height: 160px;
+      position: relative;
+      background: var(--rarity-4-bg); /* 星4色 */
+    }
+
+    .char-card.stars-5 .char-img-wrap { background: var(--rarity-5-bg); }
+
+    .char-img-wrap img.avatar {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .element-icon {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      width: 32px;
+      height: 32px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+      z-index: 3;
+    }
+
+    .char-info {
+      background: #fff;
+      color: #3b4250;
+      text-align: center;
+      padding: 10px 5px;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    /* 所持済みの演出：半透明のゴールドオーバーレイ */
+    .char-card.checked::before {
+      content: "OK";
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(219, 179, 97, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(0,0,0,0.8);
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .char-card.checked {
+      filter: brightness(0.7);
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5rem; }
+      .character-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    }
+
+
+    /* カスタムチェックボックスは非表示にしてカードクリックで制御 */
+    .hidden-check { display: none; }
+
     /* チェックされた行 */
 tr.checked {
-  background-color: #999;
+  background-color: #C5C3C6;
 }
 
 tr.checked td {
   text-decoration: line-through;
-  color: #555;
+  color: #DCDCDD;
 }
 
 /* 名前セルのレイアウト */
