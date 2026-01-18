@@ -159,22 +159,29 @@ td.rare {
 .name-cell {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 20px;
 }
 
 .name-cell input[type="checkbox"] {
   transform: scale(1.1);
 }
 
+table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: center;
+}
+
+
   </style>
 </head>
 <body>
 
-<h1>原神キャラクター一覧Ver.LunaⅣ</h1>
+<h1>原神キャラクター一覧     Ver.LunaⅣ</h1>
 
 <div class="filters">
   <select id="filter-rare">
-    <option value="">レア度（すべて）</option>
+    <option value="">レアリティ（すべて）</option>
     <option value="★★★★★">★★★★★</option>
     <option value="★★★★">★★★★</option>
   </select>
@@ -195,7 +202,7 @@ td.rare {
   <thead>
     <tr>
       <th>名前</th>
-      <th>レア度</th>	
+      <th>レアリティ</th>	
       <th>地域</th>
       <th>属性</th>
       <th>武器</th>
