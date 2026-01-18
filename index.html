@@ -35,15 +35,6 @@
       overflow-x: hidden;
     }
 
-    /* 背景の装飾的立体感（光の粒と奥行き） */
-    body::before {
-      content: "";
-      position: fixed;
-      top: -50%; left: -50%; width: 200%; height: 200%;
-      background: radial-gradient(circle, rgba(219, 179, 97, 0.05) 0%, transparent 70%);
-      z-index: -1;
-    }
-
     .wrapper {
       max-width: 1200px;
       margin: 0 auto;
@@ -113,48 +104,7 @@
       font-weight: 800;
     }
 
-    /* キャラクターグリッド */
-    .character-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 20px;
-    }
-
-    /* カードデザイン：さらに立体的に */
-    .char-card {
-      border-radius: 12px;
-      background: #e9e5dc;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-      border-bottom: 6px solid #d1c8b8; /* 下部に厚み */
-    }
-
-    .char-card.stars-5 { border-bottom-color: var(--rarity-5-border); }
-    .char-card.stars-4 { border-bottom-color: var(--rarity-4-border); }
-
-    .char-card:hover {
-      transform: translateY(-8px) scale(1.05);
-      box-shadow: 0 15px 30px rgba(0,0,0,0.6);
-      z-index: 5;
-    }
-
-    .char-img-wrap {
-      width: 100%;
-      height: 160px;
-      position: relative;
-      background: var(--rarity-4-bg); /* 星4色 */
-    }
-
-    .char-card.stars-5 .char-img-wrap { background: var(--rarity-5-bg); }
-
-    .char-img-wrap img.avatar {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+   
 
     .element-icon {
       position: absolute;
@@ -173,27 +123,6 @@
       padding: 10px 5px;
       font-size: 1.1rem;
       font-weight: 800;
-    }
-
-    /* 所持済みの演出：半透明のゴールドオーバーレイ */
-    .char-card.checked::before {
-      content: "OK";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(219, 179, 97, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 3rem;
-      font-weight: 900;
-      color: #fff;
-      text-shadow: 0 0 20px rgba(0,0,0,0.8);
-      z-index: 4;
-      pointer-events: none;
-    }
-
-    .char-card.checked {
-      filter: brightness(0.7);
     }
 
     @media (max-width: 600px) {
@@ -215,6 +144,17 @@ tr.checked td {
   color: #DCDCDD;
 }
 
+
+td.rare {
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.rare5 { color: #d4af37; }
+.rare4 { color: #886ba1; }
+
+
 /* 名前セルのレイアウト */
 .name-cell {
   display: flex;
@@ -233,14 +173,20 @@ tr.checked td {
 <h1>原神キャラクター一覧Ver.LunaⅣ</h1>
 
 <div class="filters">
-  <select id="filter-region"><option value="">出身地（すべて）</option></select>
+  <select id="filter-rare">
+    <option value="">レア度（すべて）</option>
+    <option value="★★★★★">★★★★★</option>
+    <option value="★★★★">★★★★</option>
+  </select>
+  <select id="filter-region"><option value="">地域（すべて）</option></select>
   <select id="filter-element"><option value="">属性（すべて）</option></select>
   <select id="filter-weapon"><option value="">武器（すべて）</option></select>
   <select id="filter-height"><option value="">身長タイプ（すべて）</option></select>
+  <button id="clear-checks">全チェック解除</button>
 　<label style="display:flex;align-items:center;gap:4px;">
     <input type="checkbox" id="hide-traveler" /> 旅人を非表示
   </label>
-  <button id="clear-checks">全チェック解除</button>
+  
 </div>
 
 <div class="count" id="result-count"></div>
@@ -249,7 +195,8 @@ tr.checked td {
   <thead>
     <tr>
       <th>名前</th>
-      <th>出身地</th>
+      <th>レア度</th>	
+      <th>地域</th>
       <th>属性</th>
       <th>武器</th>
       <th>身長タイプ</th>
@@ -260,128 +207,130 @@ tr.checked td {
 
 <script>
 const characters = [
-  {name:'旅人(水)', region:'その他', element:'水', weapon:'片手剣', height:'中'},
-  {name:'旅人(炎)', region:'その他', element:'炎', weapon:'片手剣', height:'中'},
-  {name:'旅人(雷)', region:'その他', element:'雷', weapon:'片手剣', height:'中'},
-  {name:'旅人(風)', region:'その他', element:'風', weapon:'片手剣', height:'中'},
-  {name:'旅人(岩)', region:'その他', element:'岩', weapon:'片手剣', height:'中'},
-  {name:'旅人(草)', region:'その他', element:'草', weapon:'片手剣', height:'中'},
+  {name:'旅人(水)',rare:'★★★★★', region:'その他', element:'水', weapon:'片手剣', height:'中'},
+  {name:'旅人(炎)',rare:'★★★★★', region:'その他', element:'炎', weapon:'片手剣', height:'中'},
+  {name:'旅人(雷)',rare:'★★★★★', region:'その他', element:'雷', weapon:'片手剣', height:'中'},
+  {name:'旅人(風)',rare:'★★★★★', region:'その他', element:'風', weapon:'片手剣', height:'中'},
+  {name:'旅人(岩)',rare:'★★★★★', region:'その他', element:'岩', weapon:'片手剣', height:'中'},
+  {name:'旅人(草)',rare:'★★★★★', region:'その他', element:'草', weapon:'片手剣', height:'中'},
 
-  {name:'ウェンティ', region:'モンド', element:'風', weapon:'弓', height:'中'},
-  {name:'アンバー', region:'モンド', element:'炎', weapon:'弓', height:'中'},
-  {name:'ガイア', region:'モンド', element:'氷', weapon:'片手剣', height:'高'},
-  {name:'リサ', region:'モンド', element:'雷', weapon:'法器', height:'高'},
-  {name:'ジン', region:'モンド', element:'風', weapon:'片手剣', height:'高'},
-  {name:'バーバラ', region:'モンド', element:'水', weapon:'法器', height:'中'},
-  {name:'ディルック', region:'モンド', element:'炎', weapon:'両手剣', height:'高'},
-  {name:'レザー', region:'モンド', element:'雷', weapon:'両手剣', height:'中'},
-  {name:'ベネット', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
-  {name:'ノエル', region:'モンド', element:'岩', weapon:'両手剣', height:'中'},
-  {name:'フィッシュル', region:'モンド', element:'雷', weapon:'弓', height:'中'},
-  {name:'スクロース', region:'モンド', element:'風', weapon:'法器', height:'中'},
-  {name:'モナ', region:'モンド', element:'水', weapon:'法器', height:'中'},
-  {name:'クレー', region:'モンド', element:'炎', weapon:'法器', height:'低'},
-  {name:'ディオナ', region:'モンド', element:'氷', weapon:'弓', height:'低'},
-  {name:'アルベド', region:'モンド', element:'岩', weapon:'片手剣', height:'中'},
-  {name:'エウルア', region:'モンド', element:'氷', weapon:'両手剣', height:'高'},
-  {name:'ミカ', region:'モンド', element:'氷', weapon:'長柄武器', height:'中'},
-  {name:'香菱', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
-  {name:'行秋', region:'璃月', element:'水', weapon:'片手剣', height:'中'},
-  {name:'重雲', region:'璃月', element:'氷', weapon:'両手剣', height:'中'},
-  {name:'刻晴', region:'璃月', element:'雷', weapon:'片手剣', height:'中'},
-  {name:'凝光', region:'璃月', element:'岩', weapon:'法器', height:'高'},
-  {name:'北斗', region:'璃月', element:'雷', weapon:'両手剣', height:'高'},
-  {name:'七七', region:'璃月', element:'氷', weapon:'片手剣', height:'低'},
-  {name:'鍾離', region:'璃月', element:'岩', weapon:'長柄武器', height:'高'},
-  {name:'甘雨', region:'璃月', element:'氷', weapon:'弓', height:'中'},
-  {name:'胡桃', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
-  {name:'申鶴', region:'璃月', element:'氷', weapon:'長柄武器', height:'高'},
-  {name:'夜蘭', region:'璃月', element:'水', weapon:'弓', height:'高'},
-  {name:'白朮', region:'璃月', element:'草', weapon:'法器', height:'高'},
-  {name:'神里綾華', region:'稲妻', element:'氷', weapon:'片手剣', height:'中'},
-  {name:'神里綾人', region:'稲妻', element:'水', weapon:'片手剣', height:'高'},
-  {name:'雷電将軍', region:'稲妻', element:'雷', weapon:'長柄武器', height:'高'},
-  {name:'八重神子', region:'稲妻', element:'雷', weapon:'法器', height:'高'},
-  {name:'宵宮', region:'稲妻', element:'炎', weapon:'弓', height:'中'},
-  {name:'早柚', region:'稲妻', element:'風', weapon:'両手剣', height:'低'},
-  {name:'久岐忍', region:'稲妻', element:'雷', weapon:'片手剣', height:'中'},
-  {name:'鹿野院平蔵', region:'稲妻', element:'風', weapon:'法器', height:'中'},
-  {name:'荒瀧一斗', region:'稲妻', element:'岩', weapon:'両手剣', height:'高'},
-  {name:'珊瑚宮心海', region:'稲妻', element:'水', weapon:'法器', height:'中'},
+  {name:'ウェンティ', rare:'★★★★★', region:'モンド', element:'風', weapon:'弓', height:'中'},
+{name:'ジン', rare:'★★★★★', region:'モンド', element:'風', weapon:'片手剣', height:'高'},
+{name:'ディルック', rare:'★★★★★', region:'モンド', element:'炎', weapon:'両手剣', height:'高'},
+{name:'クレー', rare:'★★★★★', region:'モンド', element:'炎', weapon:'法器', height:'低'},
+{name:'アルベド', rare:'★★★★★', region:'モンド', element:'岩', weapon:'片手剣', height:'中'},
+{name:'エウルア', rare:'★★★★★', region:'モンド', element:'氷', weapon:'両手剣', height:'高'},
+{name:'モナ', rare:'★★★★★', region:'モンド', element:'水', weapon:'法器', height:'中'},
+{name:'リサ', rare:'★★★★', region:'モンド', element:'雷', weapon:'法器', height:'高'},
+{name:'ガイア', rare:'★★★★', region:'モンド', element:'氷', weapon:'片手剣', height:'高'},
+{name:'アンバー', rare:'★★★★', region:'モンド', element:'炎', weapon:'弓', height:'中'},
+{name:'ノエル', rare:'★★★★', region:'モンド', element:'岩', weapon:'両手剣', height:'中'},
+{name:'ロサリア', rare:'★★★★', region:'モンド', element:'氷', weapon:'長柄武器', height:'高'},
+{name:'ミカ', rare:'★★★★', region:'モンド', element:'氷', weapon:'長柄武器', height:'中'},
+{name:'スクロース', rare:'★★★★', region:'モンド', element:'風', weapon:'法器', height:'中'},
+{name:'ベネット', rare:'★★★★', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
+{name:'フィッシュル', rare:'★★★★', region:'モンド', element:'雷', weapon:'弓', height:'中'},
+{name:'ディオナ', rare:'★★★★', region:'モンド', element:'氷', weapon:'弓', height:'低'},
+{name:'バーバラ', rare:'★★★★', region:'モンド', element:'水', weapon:'法器', height:'中'},
+{name:'レザー', rare:'★★★★', region:'モンド', element:'雷', weapon:'両手剣', height:'中'},
+{name:'ダリア',rare:'★★★★', region:'モンド', element:'水', weapon:'片手剣', height:'中'},
+{name:'ドゥリン',rare:'★★★★★', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
 
-  {name:'ティナリ', region:'スメール', element:'草', weapon:'弓', height:'中'},
-  {name:'ナヒーダ', region:'スメール', element:'草', weapon:'法器', height:'低'},
-  {name:'アルハイゼン', region:'スメール', element:'草', weapon:'片手剣', height:'高'},
-  {name:'ニィロウ', region:'スメール', element:'水', weapon:'片手剣', height:'中'},
-  {name:'ディシア', region:'スメール', element:'炎', weapon:'両手剣', height:'高'},
+{name:'鍾離', rare:'★★★★★', region:'璃月', element:'岩', weapon:'長柄武器', height:'高'},
+{name:'甘雨', rare:'★★★★★', region:'璃月', element:'氷', weapon:'弓', height:'中'},
+{name:'魈', rare:'★★★★★', region:'璃月', element:'風', weapon:'長柄武器', height:'中'},
+{name:'胡桃', rare:'★★★★★', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
+{name:'刻晴', rare:'★★★★★', region:'璃月', element:'雷', weapon:'片手剣', height:'中'},
+{name:'七七', rare:'★★★★★', region:'璃月', element:'氷', weapon:'片手剣', height:'低'},
+{name:'申鶴', rare:'★★★★★', region:'璃月', element:'氷', weapon:'長柄武器', height:'高'},
+{name:'夜蘭', rare:'★★★★★', region:'璃月', element:'水', weapon:'弓', height:'高'},
+{name:'白朮', rare:'★★★★★', region:'璃月', element:'草', weapon:'法器', height:'高'},
+{name:'雲菫', rare:'★★★★', region:'璃月', element:'岩', weapon:'長柄武器', height:'中'},
+{name:'行秋', rare:'★★★★', region:'璃月', element:'水', weapon:'片手剣', height:'中'},
+{name:'香菱', rare:'★★★★', region:'璃月', element:'炎', weapon:'長柄武器', height:'中'},
+{name:'重雲', rare:'★★★★', region:'璃月', element:'氷', weapon:'両手剣', height:'中'},
+{name:'北斗', rare:'★★★★', region:'璃月', element:'雷', weapon:'両手剣', height:'高'},
+{name:'凝光', rare:'★★★★', region:'璃月', element:'岩', weapon:'法器', height:'高'},
+{name:'辛炎', rare:'★★★★', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
+{name:'煙緋', rare:'★★★★', region:'璃月', element:'炎', weapon:'法器', height:'中'},
+{name:'ヨォーヨ',rare:'★★★★', region:'璃月', element:'草', weapon:'長柄武器', height:'低'},
+{name:'閑雲',rare:'★★★★★', region:'璃月', element:'風', weapon:'法器', height:'高'},
+{name:'嘉明',rare:'★★★★', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
+{name:'藍硯', rare:'★★★★',region:'璃月', element:'風', weapon:'法器', height:'中'},
+{name:'茲白',rare:'★★★★★', region:'璃月', element:'岩', weapon:'片手剣', height:'高'},
 
-  {name:'リネ', region:'フォンテーヌ', element:'炎', weapon:'弓', height:'中'},
-  {name:'リネット', region:'フォンテーヌ', element:'風', weapon:'片手剣', height:'中'},
-  {name:'フリーナ', region:'フォンテーヌ', element:'水', weapon:'片手剣', height:'中'},
+{name:'雷電将軍', rare:'★★★★★', region:'稲妻', element:'雷', weapon:'長柄武器', height:'高'},
+{name:'神里綾華', rare:'★★★★★', region:'稲妻', element:'氷', weapon:'片手剣', height:'中'},
+{name:'神里綾人', rare:'★★★★★', region:'稲妻', element:'水', weapon:'片手剣', height:'高'},
+{name:'八重神子', rare:'★★★★★', region:'稲妻', element:'雷', weapon:'法器', height:'高'},
+{name:'宵宮', rare:'★★★★★', region:'稲妻', element:'炎', weapon:'弓', height:'中'},
+{name:'荒瀧一斗', rare:'★★★★★', region:'稲妻', element:'岩', weapon:'両手剣', height:'高'},
+{name:'楓原万葉', rare:'★★★★★', region:'稲妻', element:'風', weapon:'片手剣', height:'中'},
+{name:'珊瑚宮心海', rare:'★★★★★', region:'稲妻', element:'水', weapon:'法器', height:'中'},
+{name:'早柚', rare:'★★★★', region:'稲妻', element:'風', weapon:'両手剣', height:'低'},
+{name:'九条裟羅', rare:'★★★★', region:'稲妻', element:'雷', weapon:'弓', height:'高'},
+{name:'鹿野院平蔵', rare:'★★★★', region:'稲妻', element:'風', weapon:'法器', height:'中'},
+{name:'久岐忍', rare:'★★★★', region:'稲妻', element:'雷', weapon:'片手剣', height:'中'},
+{name:'綺良々', rare:'★★★★', region:'稲妻', element:'草', weapon:'片手剣', height:'中'}, 
+{name:'トーマ', rare:'★★★★',region:'稲妻', element:'炎', weapon:'長柄武器', height:'高'},
+{name:'ゴロー', rare:'★★★★',region:'稲妻', element:'岩', weapon:'弓', height:'中'},
+{name:'夢見月瑞希', rare:'★★★★★',region:'稲妻', element:'風', weapon:'法器', height:'中'},
+{name:'千織',rare:'★★★★★', region:'稲妻', element:'岩', weapon:'片手剣', height:'中'},
 
-  {name:'ムアラニ', region:'ナタ', element:'水', weapon:'法器', height:'中'},
-  {name:'魈', region:'璃月', element:'風', weapon:'長柄武器', height:'中'},
-  {name:'タルタリヤ', region:'スネージナヤ', element:'水', weapon:'弓', height:'高'},
-  {name:'辛炎', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
-  {name:'ロサリア', region:'モンド', element:'氷', weapon:'長柄武器', height:'高'},
-  {name:'煙緋', region:'璃月', element:'炎', weapon:'法器', height:'中'},
-  {name:'楓原万葉', region:'稲妻', element:'風', weapon:'片手剣', height:'中'},
-  {name:'トーマ', region:'稲妻', element:'炎', weapon:'長柄武器', height:'高'},
-  {name:'ゴロー', region:'稲妻', element:'岩', weapon:'弓', height:'中'},
-  {name:'九条裟羅', region:'稲妻', element:'雷', weapon:'弓', height:'高'},
-  {name:'アーロイ', region:'その他', element:'氷', weapon:'弓', height:'中'},
-  {name:'雲菫', region:'璃月', element:'岩', weapon:'長柄武器', height:'中'},
-  {name:'ドリー', region:'スメール', element:'雷', weapon:'両手剣', height:'低'},
-  {name:'コレイ', region:'スメール', element:'草', weapon:'弓', height:'中'},
-  {name:'セノ', region:'スメール', element:'雷', weapon:'長柄武器', height:'中'},
-  {name:'キャンディス', region:'スメール', element:'水', weapon:'長柄武器', height:'高'},
-  {name:'レイラ', region:'スメール', element:'氷', weapon:'片手剣', height:'中'},
-  {name:'放浪者', region:'スメール', element:'風', weapon:'法器', height:'中'},
-  {name:'ファルザン', region:'スメール', element:'風', weapon:'弓', height:'中'},
-  {name:'カーヴェ', region:'スメール', element:'草', weapon:'両手剣', height:'高'},
-  {name:'ヨォーヨ', region:'璃月', element:'草', weapon:'長柄武器', height:'低'},
-  {name:'綺良々', region:'稲妻', element:'草', weapon:'片手剣', height:'中'},
-  {name:'シャルロット', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'中'},
-  {name:'ナヴィア', region:'フォンテーヌ', element:'岩', weapon:'両手剣', height:'高'},
-  {name:'クロリンデ', region:'フォンテーヌ', element:'雷', weapon:'片手剣', height:'高'},
-  {name:'シグウィン', region:'フォンテーヌ', element:'水', weapon:'弓', height:'低'},
-  {name:'リオセスリ', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'高'},
-  {name:'ヌヴィレット', region:'フォンテーヌ', element:'水', weapon:'法器', height:'高'},
-  {name:'アルレッキーノ', region:'スネージナヤ', element:'炎', weapon:'長柄武器', height:'高'},
-  {name:'スカーク', region:'その他', element:'氷', weapon:'片手剣', height:'中'},
-  {name:'シュヴルーズ', region:'フォンテーヌ', element:'炎', weapon:'長柄武器', height:'中'},
-  {name:'千織', region:'稲妻', element:'岩', weapon:'片手剣', height:'中'},
-  {name:'閑雲', region:'璃月', element:'風', weapon:'法器', height:'高'},
-  {name:'嘉明', region:'璃月', element:'炎', weapon:'両手剣', height:'中'},
-  {name:'セトス', region:'スメール', element:'雷', weapon:'弓', height:'中'},
-  {name:'エミリエ', region:'フォンテーヌ', element:'草', weapon:'長柄武器', height:'中'},
-  {name:'フレミネ', region:'フォンテーヌ', element:'氷', weapon:'両手剣', height:'中'},
-  {name:'カチーナ', region:'ナタ', element:'岩', weapon:'長柄武器', height:'低'},
-  {name:'キィニチ', region:'ナタ', element:'草', weapon:'両手剣', height:'中'},
-  {name:'シトラリ', region:'ナタ', element:'氷', weapon:'法器', height:'中'},
-  {name:'シロネン', region:'ナタ', element:'岩', weapon:'片手剣', height:'高'},
-  {name:'イアンサ', region:'ナタ', element:'雷', weapon:'長柄武器', height:'低'},
-  {name:'チャスカ', region:'ナタ', element:'風', weapon:'弓', height:'高'},
-  {name:'マーヴィカ', region:'ナタ', element:'炎', weapon:'両手剣', height:'高'},
-  {name:'オロルン', region:'ナタ', element:'雷', weapon:'弓', height:'高'},
-  {name:'イファ', region:'ナタ', element:'風', weapon:'法器', height:'高'},
+{name:'ナヒーダ', rare:'★★★★★', region:'スメール', element:'草', weapon:'法器', height:'低'},
+{name:'アルハイゼン', rare:'★★★★★', region:'スメール', element:'草', weapon:'片手剣', height:'高'},
+{name:'ニィロウ', rare:'★★★★★', region:'スメール', element:'水', weapon:'片手剣', height:'中'},
+{name:'セノ', rare:'★★★★★', region:'スメール', element:'雷', weapon:'長柄武器', height:'中'},
+{name:'ディシア', rare:'★★★★★', region:'スメール', element:'炎', weapon:'両手剣', height:'高'},
+{name:'ティナリ', rare:'★★★★★', region:'スメール', element:'草', weapon:'弓', height:'中'},
+{name:'放浪者', rare:'★★★★★', region:'スメール', element:'風', weapon:'法器', height:'中'},
+{name:'ファルザン', rare:'★★★★', region:'スメール', element:'風', weapon:'弓', height:'中'},
+{name:'コレイ', rare:'★★★★', region:'スメール', element:'草', weapon:'弓', height:'中'},
+{name:'ドリー', rare:'★★★★', region:'スメール', element:'雷', weapon:'両手剣', height:'低'},
+{name:'キャンディス', rare:'★★★★', region:'スメール', element:'水', weapon:'長柄武器', height:'高'},
+{name:'レイラ', rare:'★★★★', region:'スメール', element:'氷', weapon:'片手剣', height:'中'},
+{name:'カーヴェ',rare:'★★★★', region:'スメール', element:'草', weapon:'両手剣', height:'高'},
+{name:'セトス', rare:'★★★★',region:'スメール', element:'雷', weapon:'弓', height:'中'},
 
-  {name:'藍硯', region:'璃月', element:'風', weapon:'法器', height:'中'},
-  {name:'夢見月瑞希', region:'稲妻', element:'風', weapon:'法器', height:'中'},
-  {name:'ヴァレサ', region:'ナタ', element:'雷', weapon:'法器', height:'中'},
-  {name:'エスコフィエ', region:'フォンテーヌ', element:'氷', weapon:'長柄武器', height:'高'},
-  {name:'ダリア', region:'モンド', element:'水', weapon:'片手剣', height:'中'},
-  {name:'イネファ', region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'中'},
-  {name:'ラウマ', region:'ナドクライ', element:'草', weapon:'法器', height:'高'},
-  {name:'アイノ', region:'ナドクライ', element:'水', weapon:'両手剣', height:'低'},
-  {name:'ヤフォダ', region:'ナドクライ', element:'風', weapon:'弓', height:'中'},
+{name:'フリーナ', rare:'★★★★★', region:'フォンテーヌ', element:'水', weapon:'片手剣', height:'中'},
+{name:'ヌヴィレット', rare:'★★★★★', region:'フォンテーヌ', element:'水', weapon:'法器', height:'高'},
+{name:'リオセスリ', rare:'★★★★★', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'高'},
+{name:'クロリンデ', rare:'★★★★★', region:'フォンテーヌ', element:'雷', weapon:'片手剣', height:'高'},
+{name:'リネ', rare:'★★★★★', region:'フォンテーヌ', element:'炎', weapon:'弓', height:'中'},
+{name:'リネット', rare:'★★★★', region:'フォンテーヌ', element:'風', weapon:'片手剣', height:'中'},
+{name:'フレミネ', rare:'★★★★', region:'フォンテーヌ', element:'氷', weapon:'両手剣', height:'中'},
+{name:'シャルロット', rare:'★★★★', region:'フォンテーヌ', element:'氷', weapon:'法器', height:'中'},
+{name:'エミリエ', rare:'★★★★★',region:'フォンテーヌ', element:'草', weapon:'長柄武器', height:'中'},
+{name:'ナヴィア',rare:'★★★★★', region:'フォンテーヌ', element:'岩', weapon:'両手剣', height:'高'},
+{name:'シグウィン',rare:'★★★★★', region:'フォンテーヌ', element:'水', weapon:'弓', height:'低'},
+{name:'スカーク',rare:'★★★★★', region:'その他', element:'氷', weapon:'片手剣', height:'中'},
+{name:'シュヴルーズ', rare:'★★★★',region:'フォンテーヌ', element:'炎', weapon:'長柄武器', height:'中'},
+{name:'エスコフィエ', rare:'★★★★★',region:'フォンテーヌ', element:'氷', weapon:'長柄武器', height:'高'},
 
-  {name:'ドゥリン', region:'モンド', element:'炎', weapon:'片手剣', height:'中'},
-  {name:'ネフェル', region:'スメール', element:'草', weapon:'法器', height:'高'},
-  {name:'フリンズ', region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'高'},
-  {name:'コロンビーナ', region:'ナドクライ', element:'水', weapon:'法器', height:'中'},
-  {name:'茲白', region:'璃月', element:'岩', weapon:'片手剣', height:'高'},
-  {name:'イルーガ', region:'ナドクライ', element:'岩', weapon:'長柄武器', height:'中'}
+{name:'ムアラニ', rare:'★★★★★', region:'ナタ', element:'水', weapon:'法器', height:'中'},
+{name:'シロネン', rare:'★★★★★', region:'ナタ', element:'岩', weapon:'片手剣', height:'高'},
+{name:'カチーナ', rare:'★★★★',region:'ナタ', element:'岩', weapon:'長柄武器', height:'低'},
+{name:'キィニチ', rare:'★★★★★',region:'ナタ', element:'草', weapon:'両手剣', height:'中'},
+{name:'シトラリ', rare:'★★★★★',region:'ナタ', element:'氷', weapon:'法器', height:'中'},
+{name:'イアンサ', rare:'★★★★',region:'ナタ', element:'雷', weapon:'長柄武器', height:'低'},
+{name:'チャスカ', rare:'★★★★★',region:'ナタ', element:'風', weapon:'弓', height:'高'},
+{name:'マーヴィカ', rare:'★★★★★',region:'ナタ', element:'炎', weapon:'両手剣', height:'高'},
+{name:'オロルン', rare:'★★★★',region:'ナタ', element:'雷', weapon:'弓', height:'高'},
+{name:'イファ', rare:'★★★★',region:'ナタ', element:'風', weapon:'法器', height:'高'},
+{name:'ヴァレサ', rare:'★★★★★',region:'ナタ', element:'雷', weapon:'法器', height:'中'},
+
+{name:'イネファ', rare:'★★★★★',region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'中'},
+{name:'ラウマ', rare:'★★★★★',region:'ナドクライ', element:'草', weapon:'法器', height:'高'},
+{name:'アイノ',rare:'★★★★', region:'ナドクライ', element:'水', weapon:'両手剣', height:'低'},
+{name:'ヤフォダ',rare:'★★★★', region:'ナドクライ', element:'風', weapon:'弓', height:'中'},
+{name:'フリンズ',rare:'★★★★★', region:'ナドクライ', element:'雷', weapon:'長柄武器', height:'高'},
+{name:'コロンビーナ',rare:'★★★★★', region:'ナドクライ', element:'水', weapon:'法器', height:'中'},
+{name:'イルーガ', rare:'★★★★',region:'ナドクライ', element:'岩', weapon:'長柄武器', height:'中'},
+{name:'ネフェル',rare:'★★★★★', region:'ナドクライ', element:'草', weapon:'法器', height:'高'},
+
+{name:'アルレッキーノ', rare:'★★★★★',region:'スネージナヤ', element:'炎', weapon:'長柄武器', height:'高'},
+{name:'タルタリヤ',rare:'★★★★★', region:'スネージナヤ', element:'水', weapon:'弓', height:'高'},
+{name:'アーロイ',rare:'★★★★★', region:'その他', element:'氷', weapon:'弓', height:'中'},
 ];
 
 /* ===============================
@@ -474,7 +423,7 @@ const characterImages = {
 　'オロルン': 'https://static.wikia.nocookie.net/gensin-impact/images/5/5e/Ororon_Icon.png/revision/latest/scale-to-width-down/50?cb=20241014100711',
 　'フリンズ': 'https://static.wikia.nocookie.net/gensin-impact/images/a/af/Flins_Icon.png/revision/latest/scale-to-width-down/50?cb=20250910175819',
 　'イアンサ': 'https://static.wikia.nocookie.net/gensin-impact/images/3/38/Iansan_Icon.png/revision/latest/scale-to-width-down/50?cb=20250326014900',
-　'ドリー': 'https://static.wikia.nocookie.net/gensin-impact/images/3/38/Iansan_Icon.png/revision/latest/scale-to-width-down/50?cb=20250326014900',
+　'ドリー': 'https://static.wikia.nocookie.net/gensin-impact/images/5/54/Dori_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215092725',
 　'雲菫': 'https://static.wikia.nocookie.net/gensin-impact/images/9/9c/Yun_Jin_Icon.png/revision/latest/scale-to-width-down/50?cb=20220316025919',
 　'バーバラ': 'https://static.wikia.nocookie.net/gensin-impact/images/6/6a/Barbara_Icon.png/revision/latest/scale-to-width-down/50?cb=20231215091800',
 　'モナ': 'https://static.wikia.nocookie.net/gensin-impact/images/4/41/Mona_Icon.png/revision/latest/scale-to-width-down/50?cb=20220601033558',
@@ -524,9 +473,10 @@ const characterImages = {
 	// 必要に応じて他キャラも追加
 };
 
-const table = document.getElementById('character-table');
+const table = document.getElementById('character-grid');
 const countEl = document.getElementById('result-count');
 const filters = {
+  rareFilter: document.getElementById('filter-rare'),
   region: document.getElementById('filter-region'),
   element: document.getElementById('filter-element'),
   weapon: document.getElementById('filter-weapon'),
@@ -566,12 +516,13 @@ function render() {
   table.innerHTML = '';
 
   const hideTraveler = hideTravelerCheckbox.checked;
-  const checkedList = loadChecked(); // ← 追加
+  const checkedList = loadChecked(); 
 
   const filtered = characters.filter(c => {
     if (hideTraveler && c.name.startsWith('旅人')) return false;
 
-    return (!filters.region.value || c.region === filters.region.value)
+    return (!filters.rareFilter.value || c.rare === filters.rareFilter.value)
+      && (!filters.region.value || c.region === filters.region.value)
       && (!filters.element.value || c.element === filters.element.value)
       && (!filters.weapon.value || c.weapon === filters.weapon.value)
       && (!filters.height.value || c.height === filters.height.value);
@@ -594,9 +545,11 @@ function render() {
         <span>${c.name}</span>
       </div>
     `;
+    const rareClass = c.rare === '★★★★★' ? 'rare5' : 'rare4';
 
     tr.innerHTML = `
       <td>${nameHtml}</td>
+       <td class="rare ${rareClass}">${c.rare}</td>	
       <td>${c.region}</td>
       <td>${elementHtml}</td>
       <td>${c.weapon}</td>
